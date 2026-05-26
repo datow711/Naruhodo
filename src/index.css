@@ -1,0 +1,216 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  /* Colors */
+  --color-primary: #fa520f;
+  --color-primary-deep: #cc3a05;
+  --color-on-primary: #ffffff;
+  --color-sunshine-300: #ffd06a;
+  --color-sunshine-500: #ffb83e;
+  --color-sunshine-700: #ffa110;
+  --color-sunshine-800: #ff8105;
+  --color-sunshine-900: #ff8a00;
+  --color-yellow-saturated: #ffd900;
+  --color-cream: #fff8e0;
+  --color-cream-light: #fffaeb;
+  --color-cream-deeper: #fff0c2;
+  --color-beige-deep: #e6d5a8;
+  --color-ink: #1f1f1f;
+  --color-ink-tint: #3d3d3d;
+  --color-charcoal: #2c2c2c;
+  --color-slate: #4a4a4a;
+  --color-steel: #6a6a6a;
+  --color-stone: #8a8a8a;
+  --color-muted: #a8a8a8;
+  --color-hairline: #e5e5e5;
+  --color-hairline-soft: #ededed;
+  --color-hairline-strong: #c7c7c7;
+  --color-canvas: #ffffff;
+  --color-surface: #fafafa;
+  --color-surface-cream: #fff8e0;
+  --color-surface-cream-soft: #fffaeb;
+  --color-surface-code: #1c1c1e;
+  --color-on-dark: #ffffff;
+  --color-on-dark-muted: #a8a8a8;
+  --color-on-cream: #1f1f1f;
+  --color-footer-cream: #fff8e0;
+  --color-link: #fa520f;
+
+  /* Typography */
+  --font-family-display: "PP Editorial Old", Georgia, "Times New Roman", serif;
+  --font-family-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  
+  --font-hero-display: 400 84px/1.05 var(--font-family-display);
+  --font-heading-1: 400 52px/1.15 var(--font-family-display);
+  --font-heading-2: 500 36px/1.20 var(--font-family-sans);
+  --font-heading-3: 500 28px/1.25 var(--font-family-sans);
+  --font-heading-4: 500 22px/1.30 var(--font-family-sans);
+  --font-heading-5: 500 18px/1.40 var(--font-family-sans);
+  --font-body-md: 400 16px/1.55 var(--font-family-sans);
+  --font-body-md-medium: 500 16px/1.55 var(--font-family-sans);
+  --font-body-sm: 400 14px/1.50 var(--font-family-sans);
+  --font-body-sm-medium: 500 14px/1.50 var(--font-family-sans);
+  --font-caption: 400 13px/1.40 var(--font-family-sans);
+  --font-caption-bold: 600 13px/1.40 var(--font-family-sans);
+  --font-button-md: 500 14px/1.30 var(--font-family-sans);
+
+  /* Rounded */
+  --rounded-xs: 4px;
+  --rounded-sm: 6px;
+  --rounded-md: 8px;
+  --rounded-lg: 12px;
+  --rounded-xl: 16px;
+  --rounded-xxl: 20px;
+  --rounded-full: 9999px;
+
+  /* Spacing */
+  --spacing-xxs: 4px;
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-md: 16px;
+  --spacing-lg: 20px;
+  --spacing-xl: 24px;
+  --spacing-xxl: 32px;
+  --spacing-xxxl: 40px;
+  --spacing-section-sm: 48px;
+  --spacing-section: 64px;
+  --spacing-section-lg: 96px;
+  --spacing-hero: 120px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font: var(--font-body-md);
+  color: var(--color-ink);
+  background-color: var(--color-cream);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Base Utility Classes */
+.heading-1 { font: var(--font-heading-1); letter-spacing: -0.5px; }
+.heading-2 { font: var(--font-heading-2); letter-spacing: -0.5px; }
+.heading-3 { font: var(--font-heading-3); }
+
+/* Components */
+.button-primary {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  font: var(--font-button-md);
+  border-radius: var(--rounded-md);
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.button-primary:hover {
+  background-color: var(--color-primary-deep);
+}
+.button-primary:disabled {
+  background-color: var(--color-hairline);
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+
+.button-dark {
+  background-color: var(--color-ink);
+  color: var(--color-on-dark);
+  font: var(--font-button-md);
+  border-radius: var(--rounded-md);
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.card-cream {
+  background-color: var(--color-cream);
+  color: var(--color-ink);
+  border-radius: var(--rounded-lg);
+  padding: var(--spacing-xxl);
+  border: 1px solid var(--color-beige-deep);
+}
+.card-feature {
+  background-color: var(--color-canvas);
+  border-radius: var(--rounded-lg);
+  padding: var(--spacing-xxl);
+  border: 1px solid var(--color-hairline-soft);
+  box-shadow: rgba(0, 0, 0, 0.04) 0px 4px 12px;
+}
+
+.card-cream-soft {
+  background-color: var(--color-surface-cream-soft);
+  color: var(--color-ink);
+  border-radius: var(--rounded-lg);
+  padding: var(--spacing-xxl);
+}
+
+.text-input {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font: var(--font-body-md);
+  border-radius: var(--rounded-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-hairline-strong);
+  height: 44px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+.text-input:focus {
+  border: 2px solid var(--color-primary);
+  padding: calc(var(--spacing-sm) - 1px) calc(var(--spacing-md) - 1px);
+}
+
+.badge-orange {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  font: var(--font-caption-bold);
+  border-radius: var(--rounded-full);
+  padding: 4px 10px;
+  display: inline-block;
+}
+
+.badge-dark {
+  background-color: var(--color-ink);
+  color: var(--color-on-dark);
+  font: var(--font-caption-bold);
+  border-radius: var(--rounded-full);
+  padding: 4px 10px;
+  display: inline-block;
+}
+
+/* Sunset Stripe Band */
+.sunset-stripe-band {
+  background: linear-gradient(to right, var(--color-primary), var(--color-sunshine-700), var(--color-sunshine-500), var(--color-yellow-saturated), var(--color-cream));
+  padding: var(--spacing-lg) 0;
+  width: 100%;
+  height: 8px; /* Making it a thin band or thick band depending on design. The prompt says 'padding: spacing.lg 0' */
+}
+
+/* Layout Utilities */
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+}
+
+/* Settings Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.modal-content {
+  width: 100%;
+  max-width: 480px;
+}
