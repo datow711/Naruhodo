@@ -1,111 +1,129 @@
 import { GoogleGenAI, Type } from '@google/genai';
 
-// Conjugation form names used both in enum and UI
-export const FORM_NAMES = ['未然形', '連用形', '終止形', '連體形', '假定形', '命令形', '意向形'];
+// --- Extensible Mapping Tables ---
+export const POS_MAP = {
+  1: "動詞",
+  2: "名詞",
+  3: "助詞",
+  4: "形容詞",
+  5: "副詞",
+  6: "接続詞",
+  7: "感動詞",
+  8: "助動詞",
+  9: "その他"
+};
 
+export const CONJ_MAP = {
+  1: "未然形",
+  2: "連用形",
+  3: "終止形",
+  4: "連體形",
+  5: "假定形",
+  6: "命令形",
+  7: "意向形",
+  10: "て形",
+  11: "た形",
+  12: "ない形"
+};
+
+/**
+ * Strategy C: Moving mapping definitions into Schema descriptions to reduce prompt noise.
+ */
 const schema = {
   type: Type.OBJECT,
   properties: {
-    sentenceTranslation: {
-      type: Type.STRING,
-      description: "The Traditional Chinese translation of the entire input sentence. Keep it concise.",
+    st: { 
+      type: Type.STRING, 
+      description: "Concise Traditional Chinese translation of the whole sentence." 
     },
-    tokens: {
+    ts: {
       type: Type.ARRAY,
       items: {
         type: Type.OBJECT,
         properties: {
-          token: {
-            type: Type.STRING,
-            description: "The Japanese token from the original sentence (a few characters only).",
+          t: { type: Type.STRING, description: "Japanese token." },
+          p: { 
+            type: Type.INTEGER, 
+            description: "POS code: 1:動詞, 2:名詞, 3:助詞, 4:形容詞, 5:副詞, 6:接続詞, 7:感動詞, 8:助動詞, 9:その他" 
           },
-          pos: {
-            type: Type.STRING,
-            enum: ["動詞", "名詞", "助詞", "形容詞", "副詞", "接続詞", "感動詞", "助動詞", "その他"],
-            description: "Part of speech.",
+          jl: { 
+            type: Type.INTEGER, 
+            description: "JLPT: 0:None, 1:N1, 2:N2, 3:N3, 4:N4, 5:N5" 
           },
-          color: {
-            type: Type.STRING,
-            enum: ["#fa520f", "#1a8b9d", "#7352b3", "#6a6a6a", "#d9487c", "#8a8a8a"],
-            description: "Color hex: 動詞=#fa520f, 助詞=#1a8b9d, 形容詞=#7352b3, 名詞=#6a6a6a, 副詞=#d9487c, others=#8a8a8a",
-          },
-          jlptLevel: {
-            type: Type.STRING,
-            enum: ["N5", "N4", "N3", "N2", "N1", "None"],
-          },
-          translation: {
-            type: Type.STRING,
-            description: "Concise Traditional Chinese translation of just this token (1-4 characters).",
-          },
-          reading: {
-            type: Type.STRING,
-            description: "Hiragana reading of this token. If the token is already all hiragana/katakana/punctuation, return empty string. Only provide reading for tokens containing kanji.",
-          },
-          explanation: {
-            type: Type.STRING,
-            description: "One sentence in Traditional Chinese explaining the grammatical role of this token.",
-          },
-          conjugations: {
+          tr: { type: Type.STRING, description: "Short Trad. Chinese meaning." },
+          r: { type: Type.STRING, description: "Hiragana reading for kanji, else empty." },
+          ex: { type: Type.STRING, description: "BRIEF Trad. Chinese grammatical role." },
+          c: {
             type: Type.OBJECT,
             nullable: true,
-            description: "For verbs/adjectives only. null for all other POS.",
             properties: {
-              currentForm: {
-                type: Type.STRING,
-                enum: ["未然形", "連用形", "終止形", "連體形", "假定形", "命令形", "意向形", "て形", "た形", "ない形"],
-                description: "The conjugation form name currently used in the sentence.",
+              cf: { 
+                type: Type.INTEGER, 
+                description: "Current form code from CONJ mapping." 
               },
-              forms: {
-                type: Type.ARRAY,
-                description: "List of conjugation forms. Include only forms that exist for this word.",
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    name: {
-                      type: Type.STRING,
-                      enum: ["未然形", "連用形", "終止形", "連體形", "假定形", "命令形", "意向形"],
-                    },
-                    word: {
-                      type: Type.STRING,
-                      description: "The complete conjugated word for this form (e.g., 食べる, 食べて). Maximum 10 characters.",
-                    },
-                  },
-                  required: ["name", "word"],
-                },
+              f: {
+                type: Type.OBJECT,
+                description: "Mapping of CONJ code (string) to word. Codes: 1:未然, 2:連用, 3:終止, 4:連體, 5:假定, 6:命令, 7:意向, 10:て, 11:た, 12:ない"
               },
             },
-            required: ["currentForm", "forms"],
+            required: ["cf", "f"],
           },
         },
-        required: ["token", "pos", "color", "jlptLevel", "reading", "translation", "explanation"],
+        required: ["t", "p", "jl", "r", "tr", "ex"],
       },
     },
   },
-  required: ["sentenceTranslation", "tokens"],
+  required: ["st", "ts"],
 };
 
+export async function translateToJapanese(text, apiKey, modelName = "gemini-2.5-flash") {
+  if (!apiKey) throw new Error("API Key is missing.");
+  const ai = new GoogleGenAI({ apiKey });
+  const prompt = `你是一位專業的日語教科書編者。請將以下意思轉化為受過良好教育的日本人會說的、禮貌正式的日文句子（です/ます調）。
+1. 意譯優先，自然省略人稱。
+2. 嚴禁直譯漢字。
+3. 只能輸出日文句子。
+Input Meaning: 【${text}】
+Output:`;
+  const response = await ai.models.generateContent({
+    model: modelName,
+    contents: prompt,
+    config: { temperature: 0.3 },
+  });
+  const rawText = response.text || "";
+  return rawText.trim().replace(/^【.*】/, '').replace(/^Output:/i, '').replace(/^「|」$/g, '').trim();
+}
+
+function fixTruncatedJson(jsonString) {
+  let res = jsonString.trim();
+  res = res.replace(/,\s*$/, "").replace(/:\s*$/, "").replace(/,\s*"[^"]*"\s*$/, "");
+  let stack = [];
+  let inString = false;
+  for (let i = 0; i < res.length; i++) {
+    let char = res[i];
+    if (char === '"' && res[i-1] !== '\\') inString = !inString;
+    else if (!inString) {
+      if (char === '{') stack.push('}');
+      else if (char === '[') stack.push(']');
+      else if (char === '}' || char === ']') stack.pop();
+    }
+  }
+  if (inString) res += '"';
+  while (stack.length > 0) res += stack.pop();
+  return res;
+}
+
 export async function analyzeSentence(sentence, apiKey, modelName = "gemini-2.5-flash") {
+  console.log('Analyzing Japanese Sentence:', sentence);
   if (!apiKey) throw new Error("API Key is missing.");
 
   const ai = new GoogleGenAI({ apiKey });
 
-  const prompt = `Analyze the following Japanese sentence and return structured JSON.
-
-For the whole sentence: provide a concise Traditional Chinese translation (sentenceTranslation).
-
-For each token, provide:
-- token: the original Japanese text
-- pos: part of speech (one of the enum values)
-- color: the hex color mapped to the pos
-- jlptLevel: estimated JLPT level
-- reading: hiragana reading of the token. If the token contains kanji, give the full hiragana reading (e.g., token="食べ" → reading="たべ"). If token is already all hiragana/katakana/punctuation, return empty string "".
-- translation: short Traditional Chinese meaning (1-4 chars)
-- explanation: one sentence in Traditional Chinese explaining grammatical role
-- conjugations: ONLY for 動詞 and 形容詞. For all others, set to null.
-  - currentForm: which conjugation form is used in the sentence (from enum)
-  - forms: array of {name, word} for each existing conjugation form of this word.
-    Each "word" must be the COMPLETE conjugated word, short (max 10 chars).
-    Only include forms that actually exist for this verb/adjective.
+  // Clean prompt focusing only on the linguistic analysis task.
+  const prompt = `Analyze this Japanese sentence linguistically.
+- All text ('st', 'tr', 'ex') MUST be in Traditional Chinese (zh-tw).
+- Provide tokens, POS codes, JLPT levels, and conjugations as defined in the schema.
+- Keep explanations ('ex') very brief (< 15 chars).
 
 Japanese sentence: ${sentence}`;
 
@@ -115,21 +133,24 @@ Japanese sentence: ${sentence}`;
     config: {
       responseMimeType: "application/json",
       responseSchema: schema,
-      temperature: 0.2,
-      maxOutputTokens: 3000,
+      temperature: 0.1,
+      maxOutputTokens: 4096,
     },
   });
 
-  const text = response.text;
-  if (!text) throw new Error("No response from model.");
+  const text = response.text || "";
+  console.log('Raw JSON Response from Gemini:', text);
 
   try {
-    const start = text.indexOf('{');
-    const end = text.lastIndexOf('}');
-    const clean = (start !== -1 && end !== -1) ? text.substring(start, end + 1) : text;
-    return JSON.parse(clean);
+    return JSON.parse(text.trim());
   } catch (e) {
-    console.error("JSON Parsing Error. Raw:", text);
-    throw new Error("模型回傳的格式不完整，請再試一次或更換模型。");
+    try {
+      const start = text.indexOf('{');
+      if (start !== -1) {
+        const fixed = fixTruncatedJson(text.substring(start));
+        return JSON.parse(fixed);
+      }
+    } catch (e2) {}
+    throw new Error(`分析失敗：模型輸出異常，請稍後再試。`);
   }
 }
