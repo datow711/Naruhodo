@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { analyzeSentence, translateToJapanese, POS_MAP, CONJ_MAP } from './gemini';
 import './index.css';
+import logoTemp from '../logotemp.png';
 
 function SettingsModal({ isOpen, onClose, apiKey, setApiKey, modelName, setModelName }) {
   if (!isOpen) return null;
@@ -284,14 +285,16 @@ function App() {
       <header className="container" style={{ 
         padding: '32px 20px', 
         display: 'grid', 
-        gridTemplateColumns: '100px 1fr 100px', // 左、中、右三欄，確保中間絕對置中
+        gridTemplateColumns: '150px 1fr 150px', 
         alignItems: 'center',
         gap: '16px'
       }}>
-        {/* 左側佔位符，平衡佈局 */}
-        <div /> 
+        {/* 左側 Logo 區域 */}
+        <div className="header-logo-box" style={{ display: 'flex', alignItems: 'center' }}>
+          <img src={logoTemp} alt="Logo" style={{ height: '40px', objectFit: 'contain' }} />
+        </div> 
 
-        <div style={{ textAlign: 'center' }}>
+        <div className="header-title-box" style={{ textAlign: 'center' }}>
           <h1 className="heading-3" style={{ margin: 0 }}>Japanese Grammar</h1>
           <p className="caption" style={{ color: 'var(--color-stone)', margin: 0 }}>
             Understand grammar with syntax-highlighting.
@@ -300,7 +303,7 @@ function App() {
 
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <button 
-            className="button-dark" 
+            className="button-dark mobile-settings-btn" 
             onClick={() => setIsSettingsOpen(true)} 
             style={{ 
               padding: '8px 12px',
@@ -308,7 +311,8 @@ function App() {
               whiteSpace: 'nowrap'
             }}
           >
-            ⚙️ Settings
+            <span>⚙️ Settings</span>
+            <em className="mobile-only-icon" style={{ display: 'none' }}>⚙️</em> 
           </button>
         </div>
       </header>
