@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { analyzeSentence, translateToJapanese, POS_MAP } from './gemini';
+import { POS_MAP } from './gemini';
+import { runSentenceAnalysis } from './services/analysisService';
 import './index.css';
 import logoTemp from '../logotemp.png';
 const CONJ_LESSON_MAP = {
@@ -400,13 +401,9 @@ function App() {
     localStorage.setItem('gemini_model_name', modelName);
   }, [modelName]);
 
-  const isJapanese = (text) => {
-    const kanaRegex = /[\u3040-\u309f\u30a0-\u30ff\uff65-\uff9f]/;
-    return kanaRegex.test(text);
-  };
-
   const handleAnalyze = async () => {
-    if (!sentence.trim()) return;
+    const input = sentence.trim();
+    if (!input) return;
     if (!apiKey) {
       setIsSettingsOpen(true);
       return;
@@ -414,22 +411,21 @@ function App() {
 
     setIsLoading(true);
     setError(null);
-    try {
-      let textToAnalyze = sentence;
-      if (!isJapanese(sentence)) {
-        textToAnalyze = await translateToJapanese(sentence, apiKey, modelName);
-        console.log('Original Input:', sentence);
-        console.log('Translated Output:', textToAnalyze);
-        setOriginalSentence(sentence);
-      } else {
-        setOriginalSentence('');
-      }
+    setOriginalSentence('');
+    setSentenceTranslation('');
+    setTokens([]);
 
-      const result = await analyzeSentence(textToAnalyze, apiKey, modelName);
-      setTokens(result.ts || []);
-      setSentenceTranslation(result.st || '');
+    try {
+      const analysis = await runSentenceAnalysis({ sentence: input, apiKey, modelName });
+      if (analysis.warnings.length > 0) {
+        console.warn('Analysis result normalized with warnings:', analysis.warnings);
+      }
+      setOriginalSentence(analysis.originalSentence);
+      setTokens(analysis.result.ts);
+      setSentenceTranslation(analysis.result.st);
     } catch (err) {
-      setError(err.message || 'Analysis failed. Please check your API key and try again.');
+      console.error('Analysis failed:', err);
+      setError(err.userMessage || err.message || 'Analysis failed. Please check your API key and try again.');
     } finally {
       setIsLoading(false);
     }
