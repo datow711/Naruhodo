@@ -1,30 +1,12 @@
 import { GoogleGenAI, Type } from '@google/genai';
+import {
+  CONJ_MAP,
+  CONJ_SCHEMA_DESCRIPTION,
+  POS_MAP,
+  POS_SCHEMA_DESCRIPTION,
+} from './data/grammarMaps';
 
-// --- Extensible Mapping Tables ---
-export const POS_MAP = {
-  1: "動詞",
-  2: "名詞",
-  3: "助詞",
-  4: "形容詞",
-  5: "副詞",
-  6: "接続詞",
-  7: "感動詞",
-  8: "助動詞",
-  9: "その他"
-};
-
-export const CONJ_MAP = {
-  1: "未然形",
-  2: "連用形",
-  3: "終止形",
-  4: "連體形",
-  5: "假定形",
-  6: "命令形",
-  7: "意向形",
-  10: "て形",
-  11: "た形",
-  12: "ない形"
-};
+export { CONJ_MAP, POS_MAP };
 
 /**
  * Strategy C: Moving mapping definitions into Schema descriptions to reduce prompt noise.
@@ -44,7 +26,7 @@ const schema = {
           t: { type: Type.STRING, description: "Japanese token." },
           p: { 
             type: Type.INTEGER, 
-            description: "POS code: 1:動詞, 2:名詞, 3:助詞, 4:形容詞, 5:副詞, 6:接続詞, 7:感動詞, 8:助動詞, 9:その他" 
+            description: POS_SCHEMA_DESCRIPTION
           },
           jl: { 
             type: Type.INTEGER, 
@@ -63,7 +45,7 @@ const schema = {
               },
               f: {
                 type: Type.OBJECT,
-                description: "Mapping of CONJ code (string) to word. Codes: 1:未然, 2:連用, 3:終止, 4:連體, 5:假定, 6:命令, 7:意向, 10:て, 11:た, 12:ない"
+                description: CONJ_SCHEMA_DESCRIPTION
               },
             },
             required: ["cf", "f"],

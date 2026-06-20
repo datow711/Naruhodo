@@ -1,84 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { POS_MAP } from './gemini';
+import {
+  getConjLesson,
+  getConjLevelGroup,
+  getPosColor,
+  getPosName,
+} from './data/grammarMaps';
 import { runSentenceAnalysis } from './services/analysisService';
 import './index.css';
 import logoTemp from '../logotemp.png';
-const CONJ_LESSON_MAP = {
-  1: {
-    level: 'N5',
-    title: '未然形',
-    summary: '用來接否定、意志、被動、使役等的基底。',
-    focus: '先把「還沒完成、還能接續」的感覺記住。',
-  },
-  2: {
-    level: 'N5',
-    title: '連用形',
-    summary: '最常接ます、た、て、たい等。',
-    focus: '這是初學最常遇到的接續形。',
-  },
-  3: {
-    level: 'N5',
-    title: '終止形',
-    summary: '句子結尾的基本原形。',
-    focus: '字典形與敘述句的核心。',
-  },
-  4: {
-    level: 'N5',
-    title: '連體形',
-    summary: '用來修飾名詞。',
-    focus: '看到名詞前面的形態，就先想到這個用法。',
-  },
-  5: {
-    level: 'N4',
-    title: '仮定形',
-    summary: '表示如果、假設、條件。',
-    focus: '常和 ば、たら、なら 的理解一起學。',
-  },
-  6: {
-    level: 'N4',
-    title: '命令形',
-    summary: '表示命令、指示或強烈要求。',
-    focus: '口語和指令語氣會很明顯。',
-  },
-  7: {
-    level: '補充',
-    title: '特殊活用',
-    summary: '模型回傳的進階或特殊型態。',
-    focus: '先搭配句子上下文理解即可。',
-  },
-  10: {
-    level: '補充',
-    title: '特殊活用',
-    summary: '模型回傳的進階或特殊型態。',
-    focus: '先搭配句子上下文理解即可。',
-  },
-  11: {
-    level: '補充',
-    title: '特殊活用',
-    summary: '模型回傳的進階或特殊型態。',
-    focus: '先搭配句子上下文理解即可。',
-  },
-  12: {
-    level: '補充',
-    title: '特殊活用',
-    summary: '模型回傳的進階或特殊型態。',
-    focus: '先搭配句子上下文理解即可。',
-  },
-};
-
-const getConjLesson = (code) => CONJ_LESSON_MAP[code] || {
-  level: '補充',
-  title: '特殊活用',
-  summary: '模型回傳的特殊型態。',
-  focus: '先看句子上下文，再對照詞性判斷。',
-};
-
-const getConjLevelGroup = (code) => {
-  if ([1, 2, 3, 4].includes(code)) return 'N5';
-  if ([5, 6].includes(code)) return 'N4';
-  return '補充';
-};
-
 function SettingsModal({ isOpen, onClose, apiKey, setApiKey, modelName, setModelName }) {
   if (!isOpen) return null;
 
@@ -139,22 +68,8 @@ function TokenTooltip({ tokenInfo }) {
   const currentConjLesson = hasConjugations ? getConjLesson(tokenInfo.c.cf) : null;
   const currentGroup = hasConjugations ? getConjLevelGroup(tokenInfo.c.cf) : null;
 
-  const getPosColor = (posCode) => {
-    const map = {
-      1: "#fa520f", // ??
-      3: "#1a8b9d", // ?抵?
-      4: "#7352b3", // 敶Ｗ捆閰?
-      2: "#6a6a6a", // ??
-      5: "#d9487c", // ?航?
-      8: "#fa520f", // ?拙?閰?
-      6: "#d9487c", // ?亦?閰?
-      7: "#8a8a8a", // ??閰?
-      9: "#8a8a8a"  // ?隞?
-    };
-    return map[posCode] || "#8a8a8a";
-  };
 
-  const posName = POS_MAP[tokenInfo.p] || "?隞?";
+  const posName = getPosName(tokenInfo.p);
   const tokenColor = getPosColor(tokenInfo.p);
 
   return (
@@ -301,20 +216,6 @@ function TokenTooltip({ tokenInfo }) {
 function TokenViewer({ tokens }) {
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
-  const getPosColor = (posCode) => {
-    const map = {
-      1: "#fa520f", // 動詞
-      3: "#1a8b9d", // 助詞
-      4: "#7352b3", // 形容詞
-      2: "#6a6a6a", // 名詞
-      5: "#d9487c", // 副詞
-      8: "#fa520f", // 助動詞
-      6: "#d9487c", // 接続詞
-      7: "#8a8a8a", // 感動詞
-      9: "#8a8a8a"  // その他
-    };
-    return map[posCode] || "#8a8a8a";
-  };
 
   if (!tokens || tokens.length === 0) return null;
 
