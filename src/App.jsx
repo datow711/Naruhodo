@@ -1,7 +1,82 @@
 import React, { useState, useEffect } from 'react';
-import { analyzeSentence, translateToJapanese, POS_MAP, CONJ_MAP } from './gemini';
+import { analyzeSentence, translateToJapanese, POS_MAP } from './gemini';
 import './index.css';
 import logoTemp from '../logotemp.png';
+const CONJ_LESSON_MAP = {
+  1: {
+    level: 'N5',
+    title: '未然形',
+    summary: '用來接否定、意志、被動、使役等的基底。',
+    focus: '先把「還沒完成、還能接續」的感覺記住。',
+  },
+  2: {
+    level: 'N5',
+    title: '連用形',
+    summary: '最常接ます、た、て、たい等。',
+    focus: '這是初學最常遇到的接續形。',
+  },
+  3: {
+    level: 'N5',
+    title: '終止形',
+    summary: '句子結尾的基本原形。',
+    focus: '字典形與敘述句的核心。',
+  },
+  4: {
+    level: 'N5',
+    title: '連體形',
+    summary: '用來修飾名詞。',
+    focus: '看到名詞前面的形態，就先想到這個用法。',
+  },
+  5: {
+    level: 'N4',
+    title: '仮定形',
+    summary: '表示如果、假設、條件。',
+    focus: '常和 ば、たら、なら 的理解一起學。',
+  },
+  6: {
+    level: 'N4',
+    title: '命令形',
+    summary: '表示命令、指示或強烈要求。',
+    focus: '口語和指令語氣會很明顯。',
+  },
+  7: {
+    level: '補充',
+    title: '特殊活用',
+    summary: '模型回傳的進階或特殊型態。',
+    focus: '先搭配句子上下文理解即可。',
+  },
+  10: {
+    level: '補充',
+    title: '特殊活用',
+    summary: '模型回傳的進階或特殊型態。',
+    focus: '先搭配句子上下文理解即可。',
+  },
+  11: {
+    level: '補充',
+    title: '特殊活用',
+    summary: '模型回傳的進階或特殊型態。',
+    focus: '先搭配句子上下文理解即可。',
+  },
+  12: {
+    level: '補充',
+    title: '特殊活用',
+    summary: '模型回傳的進階或特殊型態。',
+    focus: '先搭配句子上下文理解即可。',
+  },
+};
+
+const getConjLesson = (code) => CONJ_LESSON_MAP[code] || {
+  level: '補充',
+  title: '特殊活用',
+  summary: '模型回傳的特殊型態。',
+  focus: '先看句子上下文，再對照詞性判斷。',
+};
+
+const getConjLevelGroup = (code) => {
+  if ([1, 2, 3, 4].includes(code)) return 'N5';
+  if ([5, 6].includes(code)) return 'N4';
+  return '補充';
+};
 
 function SettingsModal({ isOpen, onClose, apiKey, setApiKey, modelName, setModelName }) {
   if (!isOpen) return null;
@@ -53,24 +128,32 @@ function TokenTooltip({ tokenInfo }) {
   // JLPT Numeric Map: 0:None, 1:N1, 2:N2, 3:N3, 4:N4, 5:N5
   const jlptMap = { 0: "None", 1: "N1", 2: "N2", 3: "N3", 4: "N4", 5: "N5" };
   const jlptLabel = jlptMap[tokenInfo.jl] || "None";
-  const isHighLevel = [1, 2, 3].includes(tokenInfo.jl);
+  const hasConjugations = !!(tokenInfo.c && tokenInfo.c.f);
+  const conjugationEntries = hasConjugations
+    ? Object.entries(tokenInfo.c.f).map(([code, word]) => ({ code: Number(code), word }))
+    : [];
+  const n5Entries = conjugationEntries.filter(({ code }) => getConjLevelGroup(code) === 'N5');
+  const n4Entries = conjugationEntries.filter(({ code }) => getConjLevelGroup(code) === 'N4');
+  const extraEntries = conjugationEntries.filter(({ code }) => getConjLevelGroup(code) === '補充');
+  const currentConjLesson = hasConjugations ? getConjLesson(tokenInfo.c.cf) : null;
+  const currentGroup = hasConjugations ? getConjLevelGroup(tokenInfo.c.cf) : null;
 
   const getPosColor = (posCode) => {
     const map = {
-      1: "#fa520f", // 動詞
-      3: "#1a8b9d", // 助詞
-      4: "#7352b3", // 形容詞
-      2: "#6a6a6a", // 名詞
-      5: "#d9487c", // 副詞
-      8: "#fa520f", // 助動詞
-      6: "#d9487c", // 接続詞
-      7: "#8a8a8a", // 感動詞
-      9: "#8a8a8a"  // その他
+      1: "#fa520f", // ??
+      3: "#1a8b9d", // ?抵?
+      4: "#7352b3", // 敶Ｗ捆閰?
+      2: "#6a6a6a", // ??
+      5: "#d9487c", // ?航?
+      8: "#fa520f", // ?拙?閰?
+      6: "#d9487c", // ?亦?閰?
+      7: "#8a8a8a", // ??閰?
+      9: "#8a8a8a"  // ?隞?
     };
     return map[posCode] || "#8a8a8a";
   };
 
-  const posName = POS_MAP[tokenInfo.p] || "その他";
+  const posName = POS_MAP[tokenInfo.p] || "?隞?";
   const tokenColor = getPosColor(tokenInfo.p);
 
   return (
@@ -90,7 +173,7 @@ function TokenTooltip({ tokenInfo }) {
         <span className="heading-4" style={{ color: tokenColor }}>{tokenInfo.t}</span>
         <span className="caption" style={{ color: 'var(--color-steel)' }}>{posName}</span>
         {tokenInfo.jl > 0 && (
-          <span className={isHighLevel ? "badge-orange" : "badge-dark"} style={isHighLevel ? {} : { backgroundColor: 'var(--color-stone)' }}>
+          <span className={tokenInfo.jl <= 3 ? "badge-orange" : "badge-dark"} style={tokenInfo.jl <= 3 ? {} : { backgroundColor: 'var(--color-stone)' }}>
             {jlptLabel}
           </span>
         )}
@@ -100,41 +183,113 @@ function TokenTooltip({ tokenInfo }) {
         {tokenInfo.tr}
       </div>
 
-      <p style={{ marginBottom: tokenInfo.c ? '16px' : '0', lineHeight: '1.5' }}>{tokenInfo.ex}</p>
+      <p style={{ marginBottom: hasConjugations ? '16px' : '0', lineHeight: '1.5' }}>{tokenInfo.ex}</p>
 
-      {tokenInfo.c && tokenInfo.c.f && (
+      {hasConjugations && (
         <div style={{ borderTop: '1px solid var(--color-hairline-soft)', paddingTop: '12px' }}>
           <p className="caption-bold" style={{ marginBottom: '8px' }}>
-            變化型參考
+            N5 / N4 活用解釋
             <span style={{ color: 'var(--color-stone)', fontWeight: 400, marginLeft: '6px' }}>
-              (現在: <strong style={{ color: 'var(--color-primary)' }}>{CONJ_MAP[tokenInfo.c.cf]}</strong>)
+              （目前：<strong style={{ color: 'var(--color-primary)' }}>{currentConjLesson.title}</strong>，{currentGroup}）
             </span>
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '4px 12px', fontSize: '14px' }}>
-            {/* Strategy 3: Accessing compressed 'f' object where keys are conjugation codes */}
-            {Object.entries(tokenInfo.c.f).map(([conjCode, word], idx) => {
-              const codeNum = parseInt(conjCode);
-              const isCurrent = codeNum === tokenInfo.c.cf;
-              return (
-                <React.Fragment key={idx}>
-                  <div style={{ color: 'var(--color-steel)' }}>{CONJ_MAP[codeNum]}</div>
-                  <div>
-                    <span style={{
-                      color: isCurrent ? 'var(--color-primary)' : 'var(--color-slate)',
-                      fontWeight: isCurrent ? '600' : 'normal',
-                      backgroundColor: isCurrent ? 'var(--color-cream-deeper)' : 'transparent',
-                      padding: '0 4px',
-                      borderRadius: '4px'
-                    }}>
-                      {word}
-                    </span>
-                    {isCurrent && (
-                      <span style={{ marginLeft: '8px', color: 'var(--color-primary)', fontSize: '12px' }}>← 現在使用</span>
-                    )}
-                  </div>
-                </React.Fragment>
-              );
-            })}
+          <p className="caption" style={{ color: 'var(--color-steel)', marginBottom: '12px' }}>
+            先記 N5 基礎活用，再把 N4 的條件與命令看進去。其餘型態保留為補充參考。
+          </p>
+
+          <div style={{ display: 'grid', gap: '12px', fontSize: '14px' }}>
+            {n5Entries.length > 0 && (
+              <div>
+                <div className="caption-bold" style={{ marginBottom: '6px', color: 'var(--color-primary)' }}>N5 基礎活用</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '6px 12px' }}>
+                  {n5Entries.map(({ code, word }) => {
+                    const lesson = getConjLesson(code);
+                    const isCurrent = code === tokenInfo.c.cf;
+                    return (
+                      <React.Fragment key={code}>
+                        <div style={{ color: 'var(--color-steel)' }}>{lesson.title}</div>
+                        <div>
+                          <span style={{
+                            color: isCurrent ? 'var(--color-primary)' : 'var(--color-slate)',
+                            fontWeight: isCurrent ? '600' : 'normal',
+                            backgroundColor: isCurrent ? 'var(--color-cream-deeper)' : 'transparent',
+                            padding: '0 4px',
+                            borderRadius: '4px'
+                          }}>
+                            {word}
+                          </span>
+                          <div className="caption" style={{ color: 'var(--color-slate)', marginTop: '2px' }}>
+                            {lesson.summary}
+                          </div>
+                        </div>
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {n4Entries.length > 0 && (
+              <div>
+                <div className="caption-bold" style={{ marginBottom: '6px', color: 'var(--color-primary-deep)' }}>N4 延伸活用</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '6px 12px' }}>
+                  {n4Entries.map(({ code, word }) => {
+                    const lesson = getConjLesson(code);
+                    const isCurrent = code === tokenInfo.c.cf;
+                    return (
+                      <React.Fragment key={code}>
+                        <div style={{ color: 'var(--color-steel)' }}>{lesson.title}</div>
+                        <div>
+                          <span style={{
+                            color: isCurrent ? 'var(--color-primary)' : 'var(--color-slate)',
+                            fontWeight: isCurrent ? '600' : 'normal',
+                            backgroundColor: isCurrent ? 'var(--color-cream-deeper)' : 'transparent',
+                            padding: '0 4px',
+                            borderRadius: '4px'
+                          }}>
+                            {word}
+                          </span>
+                          <div className="caption" style={{ color: 'var(--color-slate)', marginTop: '2px' }}>
+                            {lesson.summary}
+                          </div>
+                        </div>
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {extraEntries.length > 0 && (
+              <div>
+                <div className="caption-bold" style={{ marginBottom: '6px', color: 'var(--color-steel)' }}>補充型態</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '6px 12px' }}>
+                  {extraEntries.map(({ code, word }) => {
+                    const lesson = getConjLesson(code);
+                    const isCurrent = code === tokenInfo.c.cf;
+                    return (
+                      <React.Fragment key={code}>
+                        <div style={{ color: 'var(--color-steel)' }}>{lesson.title}</div>
+                        <div>
+                          <span style={{
+                            color: isCurrent ? 'var(--color-primary)' : 'var(--color-slate)',
+                            fontWeight: isCurrent ? '600' : 'normal',
+                            backgroundColor: isCurrent ? 'var(--color-cream-deeper)' : 'transparent',
+                            padding: '0 4px',
+                            borderRadius: '4px'
+                          }}>
+                            {word}
+                          </span>
+                          <div className="caption" style={{ color: 'var(--color-slate)', marginTop: '2px' }}>
+                            {lesson.focus}
+                          </div>
+                        </div>
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
